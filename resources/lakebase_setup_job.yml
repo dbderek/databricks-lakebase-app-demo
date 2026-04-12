@@ -1,0 +1,11 @@
+resources:
+  jobs:
+    lakebase_setup:
+      name: "[${bundle.target}] Lakebase Setup"
+      tasks:
+        - task_key: setup_lakebase
+          notebook_task:
+            notebook_path: ../src/notebooks/02_setup_lakebase.ipynb
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

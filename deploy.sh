@@ -66,8 +66,7 @@ databricks bundle deploy -t "$TARGET" -p "$PROFILE"
 
 if $DEPLOY_DATA; then
   echo "--- Generating sample data ---"
-  # Run notebook 01 via workspace API or job
-  echo "TODO: Run src/notebooks/01_generate_sample_data.ipynb"
+  databricks bundle run generate_sample_data -t "$TARGET" -p "$PROFILE"
 fi
 
 if $DEPLOY_PIPELINE; then
@@ -77,7 +76,7 @@ fi
 
 if $DEPLOY_LAKEBASE; then
   echo "--- Setting up Lakebase ---"
-  echo "TODO: Run src/notebooks/02_setup_lakebase.ipynb"
+  databricks bundle run lakebase_setup -t "$TARGET" -p "$PROFILE"
   echo "--- Syncing gold to Lakebase ---"
   databricks bundle run lakebase_sync -t "$TARGET" -p "$PROFILE"
 fi
