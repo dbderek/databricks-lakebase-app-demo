@@ -1,5 +1,5 @@
 -- Gold: Monthly time-series of portfolio performance
-CREATE OR REFRESH MATERIALIZED VIEW db_residential_demo.gold.gold_portfolio_time_series
+CREATE OR REFRESH MATERIALIZED VIEW startups_catalog.gold.gold_portfolio_time_series
 CLUSTER BY (rent_month)
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true'
@@ -25,7 +25,7 @@ SELECT
   COUNT(DISTINCT r.property_id) FILTER (WHERE p.city = 'Denver') AS denver_properties,
   ROUND(AVG(CAST(r.is_occupied AS DOUBLE)) FILTER (WHERE p.city = 'Denver') * 100, 1) AS denver_occupancy_pct,
   ROUND(AVG(CAST(r.is_occupied AS DOUBLE)) FILTER (WHERE p.city != 'Denver') * 100, 1) AS other_occupancy_pct
-FROM db_residential_demo.silver.silver_rents r
-JOIN db_residential_demo.silver.silver_properties p ON r.property_id = p.property_id
+FROM startups_catalog.silver.silver_rents r
+JOIN startups_catalog.silver.silver_properties p ON r.property_id = p.property_id
 GROUP BY r.rent_date
 ORDER BY r.rent_date;

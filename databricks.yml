@@ -15,7 +15,7 @@ artifacts:
 
 variables:
   catalog:
-    default: "db_residential_demo"
+    default: "startups_catalog"
   raw_schema:
     default: "raw"
   bronze_schema:
@@ -35,11 +35,11 @@ targets:
     workspace:
       profile: vm
     variables:
-      catalog: "db_residential_demo"
+      catalog: "startups_catalog"
 
   prod:
     mode: production
     workspace:
       profile: vm
     variables:
-      catalog: "db_residential_demo"
+      catalog: "startups_catalog"

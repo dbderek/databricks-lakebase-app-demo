@@ -74,7 +74,7 @@
                                                        v
                                           +---------------------------+
                                           |  Unity Catalog            |
-                                          |  db_residential_demo      |
+                                          |  startups_catalog      |
                                           |  (gold tables / Lakebase) |
                                           +---------------------------+
 
@@ -106,10 +106,10 @@ Data Flow (simplified):
 
 ### 1. Unity Catalog Volume (Raw Data)
 
-- **Location:** `db_residential_demo.raw.data`
+- **Location:** `startups_catalog.raw.data`
 - **Paths:**
-  - `/Volumes/db_residential_demo/raw/data/properties/*.json` -- property records (address, units, purchase price, acquisition date)
-  - `/Volumes/db_residential_demo/raw/data/rents/*.json` -- rent records (monthly rent, occupancy, dates)
+  - `/Volumes/startups_catalog/raw/data/properties/*.json` -- property records (address, units, purchase price, acquisition date)
+  - `/Volumes/startups_catalog/raw/data/rents/*.json` -- rent records (monthly rent, occupancy, dates)
 - **Role:** Landing zone for raw JSON data. The synthetic data generation notebook (`01_generate_sample_data.ipynb`) populates this volume.
 
 ### 2. SDP SQL Pipeline (Bronze / Silver / Gold)
@@ -118,19 +118,19 @@ Data Flow (simplified):
 - **Engine:** Serverless + Photon
 - **DABs resource:** `resources/pipeline.yml`
 
-#### Bronze Layer (`db_residential_demo.bronze`)
+#### Bronze Layer (`startups_catalog.bronze`)
 
 - `bronze_properties` -- Auto Loader streaming table from properties JSON
 - `bronze_rents` -- Auto Loader streaming table from rents JSON
 - Ingests raw JSON with schema inference; preserves all source fields.
 
-#### Silver Layer (`db_residential_demo.silver`)
+#### Silver Layer (`startups_catalog.silver`)
 
 - `silver_properties` -- Type-cast, deduped by `property_id`
 - `silver_rents` -- Type-cast, date-normalized, occupancy flag added
 - Applies data quality checks and cleaning transformations.
 
-#### Gold Layer (`db_residential_demo.gold`)
+#### Gold Layer (`startups_catalog.gold`)
 
 - `gold_portfolio_property_metrics` -- Per-property aggregated metrics (avg rent, occupancy rate, units, purchase price, acquisition date)
 - `gold_portfolio_time_series` -- Time-series view of portfolio performance (AUM, cash yield over time)
@@ -199,7 +199,7 @@ The FastAPI `/api/chat` endpoint forwards user messages to the Model Serving end
 
 ## Data Flow Summary
 
-1. **Ingest:** Raw JSON files land in the UC Volume (`db_residential_demo.raw.data`).
+1. **Ingest:** Raw JSON files land in the UC Volume (`startups_catalog.raw.data`).
 2. **Transform:** The SDP SQL pipeline processes data through bronze (raw ingestion), silver (cleaned/typed), and gold (aggregated metrics) layers.
 3. **Sync:** The Lakebase sync job copies gold tables into the Lakebase PostgreSQL database for low-latency app access.
 4. **Serve:** The apx app reads from Lakebase via SQLModel and writes user-generated scenarios back.

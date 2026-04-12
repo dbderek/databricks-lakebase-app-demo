@@ -14,7 +14,7 @@ Instructions for Claude when working on the Databricks Residential Investment Co
 4. **GenAI Investment Copilot Agent** answers investment questions and runs forecast scenarios via Model Serving.
 
 - **Target workspace profile:** `vm` (fevm-startups.cloud.databricks.com)
-- **Catalog:** `db_residential_demo`
+- **Catalog:** `startups_catalog`
 - **Lakebase project:** `db-residential-app-db`
 
 ---
@@ -134,12 +134,18 @@ databricks bundle run db_residential_copilot_app -p vm   # Start the app
 - Python dependencies are managed via `uv` (never pip).
 - Frontend dependencies are managed via `apx bun add <dep>`.
 
+### MCP Server
+
+- **Read-only only.** The Databricks MCP server is used exclusively for read-only validation and debugging (e.g., checking table schemas, previewing query results, verifying deployed resources).
+- **NEVER** use MCP to create or modify persistent assets (tables, catalogs, schemas, jobs, pipelines, dashboards, etc.).
+- All persistent assets must be created via DABs (`databricks bundle deploy`), the Databricks CLI, or notebooks -- so the demo is fully reproducible and transferable.
+
 ### SDP Pipeline (SQL)
 
 - Pipeline SQL uses fully qualified table names (multi-schema pattern).
-- Bronze tables live in `db_residential_demo.bronze`.
-- Silver tables live in `db_residential_demo.silver`.
-- Gold tables live in `db_residential_demo.gold`.
+- Bronze tables live in `startups_catalog.bronze`.
+- Silver tables live in `startups_catalog.silver`.
+- Gold tables live in `startups_catalog.gold`.
 - Schemas: `raw` (UC Volume), `bronze`, `silver`, `gold`.
 
 ### Backend (FastAPI)

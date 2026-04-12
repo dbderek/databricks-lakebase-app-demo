@@ -1,5 +1,5 @@
 -- Silver: Clean, type-cast, and deduplicate properties
-CREATE OR REFRESH STREAMING TABLE db_residential_demo.silver.silver_properties (
+CREATE OR REFRESH STREAMING TABLE startups_catalog.silver.silver_properties (
   CONSTRAINT valid_property_id EXPECT (property_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_purchase_price EXPECT (purchase_price > 0) ON VIOLATION DROP ROW,
   CONSTRAINT valid_units EXPECT (units > 0) ON VIOLATION DROP ROW
@@ -26,4 +26,4 @@ SELECT
   CAST(current_appraised_value AS DECIMAL(14, 2)) AS current_appraised_value,
   market_id,
   _ingested_at
-FROM STREAM db_residential_demo.bronze.bronze_properties;
+FROM STREAM startups_catalog.bronze.bronze_properties;

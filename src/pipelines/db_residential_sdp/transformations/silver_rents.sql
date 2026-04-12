@@ -1,5 +1,5 @@
 -- Silver: Clean, type-cast, and deduplicate rent records
-CREATE OR REFRESH STREAMING TABLE db_residential_demo.silver.silver_rents (
+CREATE OR REFRESH STREAMING TABLE startups_catalog.silver.silver_rents (
   CONSTRAINT valid_rent_id EXPECT (rent_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_property_id EXPECT (property_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_monthly_rent EXPECT (monthly_rent >= 0) ON VIOLATION DROP ROW
@@ -21,4 +21,4 @@ SELECT
   is_occupied,
   CAST(rent_date AS DATE) AS rent_date,
   _ingested_at
-FROM STREAM db_residential_demo.bronze.bronze_rents;
+FROM STREAM startups_catalog.bronze.bronze_rents;
