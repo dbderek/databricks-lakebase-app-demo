@@ -23,6 +23,10 @@ app-entrypoint = "db_residential_copilot.backend.app:app"
 api-prefix = "/api"
 metadata-path = "src/db_residential_copilot/_metadata.py"
 
+[tool.apx.ui]
+dist-dir = "src/db_residential_copilot/__dist__"
+src-dir = "src/db_residential_copilot/ui"
+
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
 build-backend = "hatchling.build"

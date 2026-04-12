@@ -3,4 +3,4 @@ name = "workspace"
 version = "0.0.0"
 
 [tool.uv.workspace]
-members = ["src/*"]
+members = ["src/app", "src/agent"]

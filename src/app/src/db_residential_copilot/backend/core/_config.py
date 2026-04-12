@@ -28,6 +28,7 @@ class AppConfig(BaseSettings):
         env_nested_delimiter="__",
     )
     app_name: str = Field(default=app_name)
+    serving_endpoint_name: str = Field(default="investment_copilot")
 
     @property
     def static_assets_path(self) -> Path:

@@ -26,7 +26,7 @@ variables:
     default: "gold"
   warehouse_id:
     lookup:
-      warehouse: "Starter Warehouse"
+      warehouse: "Serverless Starter Warehouse"
 
 targets:
   dev:

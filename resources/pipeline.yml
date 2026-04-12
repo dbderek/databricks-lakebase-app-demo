@@ -7,8 +7,17 @@ resources:
       serverless: true
       libraries:
         - file:
-            path: ../src/pipelines/db_residential_sdp/transformations/
-      root_path: ../src/pipelines/db_residential_sdp
+            path: ../src/pipelines/db_residential_sdp/transformations/bronze_properties.sql
+        - file:
+            path: ../src/pipelines/db_residential_sdp/transformations/bronze_rents.sql
+        - file:
+            path: ../src/pipelines/db_residential_sdp/transformations/silver_properties.sql
+        - file:
+            path: ../src/pipelines/db_residential_sdp/transformations/silver_rents.sql
+        - file:
+            path: ../src/pipelines/db_residential_sdp/transformations/gold_portfolio_property_metrics.sql
+        - file:
+            path: ../src/pipelines/db_residential_sdp/transformations/gold_portfolio_time_series.sql
       development: true
       photon: true
       channel: current
