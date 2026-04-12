@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+.env
+
+# Node / Frontend
+node_modules/
+.next/
+dist/
+*.tsbuildinfo
+
+# Databricks
+.databricks/
+*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env.local
+.env.*.local
+credentials.json
+
+# apx
+.apx/
+
+# AI Dev Kit (local MCP config)
+.ai-dev-kit/
+
+# Claude plans
+.claude/plans/

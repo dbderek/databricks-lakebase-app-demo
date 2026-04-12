@@ -1,0 +1,36 @@
+bundle:
+  name: db-residential-investment-copilot
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: "db_residential_demo"
+  raw_schema:
+    default: "raw"
+  bronze_schema:
+    default: "bronze"
+  silver_schema:
+    default: "silver"
+  gold_schema:
+    default: "gold"
+  warehouse_id:
+    lookup:
+      warehouse: "Starter Warehouse"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      profile: vm
+    variables:
+      catalog: "db_residential_demo"
+
+  prod:
+    mode: production
+    workspace:
+      profile: vm
+    variables:
+      catalog: "db_residential_demo"

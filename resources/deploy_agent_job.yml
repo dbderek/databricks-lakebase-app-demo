@@ -1,0 +1,11 @@
+resources:
+  jobs:
+    deploy_agent:
+      name: "[${bundle.target}] Deploy Investment Copilot Agent"
+      tasks:
+        - task_key: deploy
+          notebook_task:
+            notebook_path: ../src/notebooks/04_register_agent.ipynb
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

@@ -1,0 +1,11 @@
+resources:
+  jobs:
+    lakebase_sync:
+      name: "[${bundle.target}] Lakebase Sync"
+      tasks:
+        - task_key: sync_gold_to_lakebase
+          notebook_task:
+            notebook_path: ../src/notebooks/03_sync_gold_to_lakebase.ipynb
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

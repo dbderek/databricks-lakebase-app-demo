@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    db_residential_sdp:
+      name: "[${bundle.target}] DB Residential SDP Pipeline"
+      catalog: ${var.catalog}
+      target: ${var.bronze_schema}
+      serverless: true
+      libraries:
+        - file:
+            path: ../src/pipelines/db_residential_sdp/transformations/
+      root_path: ../src/pipelines/db_residential_sdp
+      development: true
+      photon: true
+      channel: current
+      continuous: false
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
