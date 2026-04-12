@@ -1,0 +1,1 @@
+command: ["uvicorn", "db_residential_copilot.backend.app:app", "--workers", "2"]
