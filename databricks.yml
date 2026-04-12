@@ -4,6 +4,15 @@ bundle:
 include:
   - resources/*.yml
 
+sync:
+  include:
+    - src/app/.build
+
+artifacts:
+  app:
+    build: apx build
+    path: src/app
+
 variables:
   catalog:
     default: "db_residential_demo"

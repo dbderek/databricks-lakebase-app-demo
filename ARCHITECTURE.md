@@ -6,7 +6,7 @@
 
 ```
 +=====================================================================================+
-|                           ROOT DABS BUNDLE (databricks.yml)                         |
+|                         DABS BUNDLE (databricks.yml)                                |
 |                                                                                     |
 |  +------------------+     +---------------------------------------------------+     |
 |  |   UC Volume      |     |        SDP SQL Pipeline (Serverless + Photon)     |     |
@@ -28,13 +28,6 @@
 |  |   - deploy_agent  (notebook 04)                              |   |               |
 |  +--------------------------------------------------------------+   |               |
 |                                                                     |               |
-+=====================================================================================+
-                                                                      |
-                              Lakehouse Sync (Gold --> Lakebase)      |
-                                                                      v
-+=====================================================================================+
-|                         APX APP BUNDLE (src/app/databricks.yml)                     |
-|                                                                                     |
 |  +------------------------------------------+    +------------------------------+   |
 |  |  Lakebase Autoscale (PostgreSQL)         |    |  Databricks App              |   |
 |  |  Instance: db-residential-copilot        |    |  Name: db-residential-copilot|   |
@@ -148,7 +141,7 @@ Data Flow (simplified):
 - **Instance:** `db-residential-copilot` (PostgreSQL-compatible)
 - **Capacity:** CU_1 (auto-scaling)
 - **Database:** `databricks_postgres`
-- **DABs resource:** Defined in `src/app/databricks.yml`
+- **DABs resource:** Defined in `resources/app.yml`
 
 #### App Schema Tables
 
@@ -164,7 +157,7 @@ The `lakebase_sync` job (`resources/sync_job.yml`) runs notebook `03_sync_gold_t
 
 - **App name:** `db-residential-copilot`
 - **Framework:** apx (React + TypeScript frontend, FastAPI + Pydantic backend)
-- **DABs resource:** `src/app/databricks.yml`
+- **DABs resource:** `resources/app.yml`
 
 #### FastAPI Backend
 
@@ -215,21 +208,15 @@ The FastAPI `/api/chat` endpoint forwards user messages to the Model Serving end
 
 ---
 
-## Bundle Scopes
+## Bundle Structure
 
-### Root Bundle (`databricks.yml`)
+### Single Bundle (`databricks.yml`)
 
-Manages the data infrastructure:
+All infrastructure is managed by a single root bundle:
 
-- SDP SQL Pipeline (`db_residential_sdp`)
-- Lakebase sync job (`lakebase_sync`)
-- Agent deployment job (`deploy_agent`)
-- Variables: catalog name, schema names, warehouse ID
-
-### App Bundle (`src/app/databricks.yml`)
-
-Manages the application infrastructure:
-
-- Lakebase Autoscale database instance (`db-residential-copilot`)
-- Databricks App resource (`db-residential-copilot`)
-- Build artifact via `apx build`
+- **Data:** SDP SQL Pipeline (`db_residential_sdp`)
+- **Sync:** Lakebase sync job (`lakebase_sync`)
+- **Agent:** Agent deployment job (`deploy_agent`)
+- **Database:** Lakebase Autoscale instance (`db-residential-copilot`) -- defined in `resources/app.yml`
+- **App:** Databricks App (`db-residential-copilot`) -- defined in `resources/app.yml`, built via `apx build` artifact
+- **Variables:** catalog name, schema names, warehouse ID

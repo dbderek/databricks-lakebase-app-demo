@@ -83,10 +83,8 @@ if $DEPLOY_LAKEBASE; then
 fi
 
 if $DEPLOY_APP; then
-  echo "--- Building and deploying app ---"
-  apx build
-  databricks bundle deploy -t "$TARGET" -p "$PROFILE"
-  databricks bundle run residential_copilot_app -t "$TARGET" -p "$PROFILE"
+  echo "--- Deploying app (apx build runs automatically via bundle artifacts) ---"
+  databricks bundle run db_residential_copilot_app -t "$TARGET" -p "$PROFILE"
 fi
 
 if $DEPLOY_AGENT; then

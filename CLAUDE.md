@@ -27,22 +27,22 @@ Instructions for Claude when working on the Databricks Residential Investment Co
 | Pipeline language | **SQL** (not Python) | SDP SQL is declarative, concise, and maps directly to DLT |
 | App framework | **apx toolkit** | Full-stack React + FastAPI with DI, OpenAPI codegen, and Databricks Apps integration |
 | Deployment | **DABs (Databricks Asset Bundles)** | Infrastructure-as-code for pipelines, jobs, and the app |
-| Bundle layout | **Two separate bundles** | Root bundle at `databricks.yml` (pipeline + jobs); apx app bundle at `src/app/databricks.yml` |
+| Bundle layout | **Single root bundle** | All resources (pipeline, jobs, app, database instance) managed by root `databricks.yml` |
 
 ---
 
 ## Project Structure
 
 ```
-databricks.yml                  # Root DABs bundle (pipeline, jobs)
+databricks.yml                  # DABs bundle (all resources: pipeline, jobs, app, DB instance)
 resources/
   pipeline.yml                  # SDP pipeline resource definition
   sync_job.yml                  # Lakebase sync job resource
   deploy_agent_job.yml          # Agent deployment job resource
+  app.yml                       # Databricks App + Lakebase database instance resources
 src/
-  app/                          # apx full-stack app (has its own databricks.yml)
-    databricks.yml              # App DABs bundle (Lakebase instance + App resource)
-    app.yml                     # Databricks App process definition
+  app/                          # apx full-stack app
+    app.yml                     # Databricks App process definition (command + env vars)
     pyproject.toml              # Python deps (uv) + apx config
     src/db_residential_copilot/
       backend/                  # FastAPI + Pydantic
@@ -105,20 +105,15 @@ apx dev check              # TypeScript + Python type checks
 apx dev refresh_openapi    # Regenerate TypeScript API client from OpenAPI
 ```
 
-### Root Bundle (pipeline + jobs)
+### Bundle (all resources)
 
 ```bash
-databricks bundle validate -p vm          # Validate root bundle
-databricks bundle deploy -p vm            # Deploy root bundle
-databricks bundle run db_residential_sdp -p vm   # Run the SDP pipeline
-databricks bundle run lakebase_sync -p vm        # Run the Lakebase sync job
-databricks bundle run deploy_agent -p vm         # Deploy the agent
-```
-
-### App Bundle
-
-```bash
-cd src/app && databricks bundle deploy -p vm     # Deploy apx app bundle
+databricks bundle validate -p vm                         # Validate bundle
+databricks bundle deploy -p vm                           # Deploy all resources
+databricks bundle run db_residential_sdp -p vm           # Run the SDP pipeline
+databricks bundle run lakebase_sync -p vm                # Run the Lakebase sync job
+databricks bundle run deploy_agent -p vm                 # Deploy the agent
+databricks bundle run db_residential_copilot_app -p vm   # Start the app
 ```
 
 ### Full Deployment
