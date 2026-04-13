@@ -4,9 +4,9 @@ import uuid
 from decimal import Decimal
 
 from databricks.sdk.service.iam import User as UserOut
-from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
+from langchain_core.messages import AIMessageChunk, HumanMessage
 from sqlmodel import select
 
 from .core import Dependencies, create_router, logger
@@ -231,7 +231,7 @@ def get_deal(deal_id: str, session: Dependencies.Session):
 @router.post("/chat", operation_id="chat")
 def chat(
     req: ChatRequest,
-    ws: Dependencies.Client,
+    agent: Dependencies.Agent,
     config: Dependencies.Config,
     session: Dependencies.Session,
     headers: Dependencies.Headers,
@@ -239,19 +239,21 @@ def chat(
     start_time = time.time()
 
     def event_stream():
-        full_response = []
+        full_response: list[str] = []
+
+        if agent is None:
+            yield f"data: {json.dumps({'error': 'Agent not available — check app startup logs.'})}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
         try:
-            response = ws.serving_endpoints.query(
-                name=config.serving_endpoint_name,
-                messages=[ChatMessage(role=ChatMessageRole.USER, content=req.message)],
-                stream=True,
-            )
-            for chunk in response:  # ty: ignore[not-iterable]
-                if hasattr(chunk, "choices") and chunk.choices:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, "content") and delta.content:
-                        full_response.append(delta.content)
-                        yield f"data: {json.dumps({'content': delta.content})}\n\n"
+            for msg, _metadata in agent.stream(
+                {"messages": [HumanMessage(content=req.message)]},
+                stream_mode="messages",
+            ):
+                if isinstance(msg, AIMessageChunk) and msg.content:
+                    full_response.append(msg.content)
+                    yield f"data: {json.dumps({'content': msg.content})}\n\n"
         except Exception as e:
             logger.error(f"Chat error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -265,7 +267,7 @@ def chat(
                 user_email=headers.user_email,
                 question=req.message,
                 answer_summary=answer[:500] if answer else None,
-                model_endpoint=config.serving_endpoint_name,
+                model_endpoint=config.llm_endpoint,
                 latency_ms=latency_ms,
             )
             session.add(audit)

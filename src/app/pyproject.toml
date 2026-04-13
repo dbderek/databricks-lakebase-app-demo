@@ -1,14 +1,20 @@
 [project]
 name = "db-residential-copilot"
 dynamic = ["version"]
-description = "Add your description here"
+description = "Databricks Residential Investment Copilot"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.119.0",
     "pydantic-settings>=2.11.0",
+    "python-dotenv>=1.0.0",
     "uvicorn>=0.37.0",
-    "databricks-sdk>=0.74.0", "sqlmodel>=0.0.27", "psycopg[binary,pool]>=3.2.11",
+    "databricks-sdk>=0.81.0",
+    "sqlmodel>=0.0.27",
+    "psycopg[binary,pool]>=3.2.11",
+    "langchain-core>=0.3.0",
+    "langchain-databricks>=0.1.0",
+    "langgraph>=0.2.0",
 ]
 
 [dependency-groups]
@@ -16,33 +22,12 @@ dev = [
     "ty>=0.0.12",
 ]
 
-[tool.apx.metadata]
-app-name = "db-residential-copilot"
-app-slug = "db_residential_copilot"
-app-entrypoint = "db_residential_copilot.backend.app:app"
-api-prefix = "/api"
-metadata-path = "src/db_residential_copilot/_metadata.py"
-
-[tool.apx.ui]
-dist-dir = "src/db_residential_copilot/__dist__"
-src-dir = "src/db_residential_copilot/ui"
-
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.uv-dynamic-versioning]
-vcs = "git"
-fallback-version = "0.0.0"
-
-[tool.hatch.build.hooks.version]
 path = "src/db_residential_copilot/_version.py"
-template = '''
-version = "{version}"
-'''
 
 [tool.hatch.build]
-artifacts = ["src/db_residential_copilot/__dist__", "src/db_residential_copilot/_metadata.py"]
+artifacts = ["src/db_residential_copilot/__dist__", "src/db_residential_copilot/_version.py"]

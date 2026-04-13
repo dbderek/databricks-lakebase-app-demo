@@ -1,3 +1,0 @@
-llm_endpoint: databricks-claude-sonnet-4
-catalog: startups_catalog
-gold_schema: gold

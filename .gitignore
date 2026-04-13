@@ -45,3 +45,10 @@ credentials.json
 
 # Claude (skills, plans, settings, memory)
 .claude/
+
+# Personal config
+.me/
+
+# Project docs (generated)
+PROJECTPLAN.md
+CLAUDE.md

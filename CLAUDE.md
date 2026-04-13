@@ -11,7 +11,7 @@ Instructions for Claude when working on the Databricks Residential Investment Co
 1. **Unity Catalog + SDP SQL Pipeline** ingests raw JSON from a UC Volume through bronze/silver/gold layers.
 2. **Lakebase Autoscale** provides a PostgreSQL-compatible operational database for low-latency app queries.
 3. **apx React + FastAPI App** delivers a full-stack Databricks App with portfolio analytics and deal underwriting.
-4. **GenAI Investment Copilot Agent** answers investment questions and runs forecast scenarios via Model Serving.
+4. **GenAI Investment Copilot Agent** runs in-process (LangGraph ReAct) using ChatDatabricks foundation model endpoints, querying Lakebase directly for portfolio data.
 
 - **Target workspace profile:** `vm` (fevm-startups.cloud.databricks.com)
 - **Catalog:** `startups_catalog`
@@ -38,7 +38,6 @@ databricks.yml                  # DABs bundle (all resources: pipeline, jobs, ap
 resources/
   pipeline.yml                  # SDP pipeline resource definition
   sync_job.yml                  # Lakebase sync job resource
-  deploy_agent_job.yml          # Agent deployment job resource
   app.yml                       # Databricks App + Lakebase database instance resources
 src/
   app/                          # apx full-stack app
@@ -49,15 +48,15 @@ src/
         app.py                  # FastAPI entrypoint
         router.py               # API routes with operation_id
         models.py               # Pydantic models (3-model pattern)
+        agent.py                # LangGraph ReAct agent (in-process, queries Lakebase)
         core/                   # DI, config, Lakebase engine, factory
-          lakebase.py           # SQLAlchemy/SQLModel Lakebase integration
+          lakebase.py           # SQLAlchemy/SQLModel Lakebase integration (OAuth token auth)
           dependencies.py       # Dependency injection definitions
       ui/                       # React + TypeScript (created on first apx dev start)
   notebooks/                    # Databricks notebooks (.ipynb)
     01_generate_sample_data.ipynb
     02_setup_lakebase.ipynb
     03_sync_gold_to_lakebase.ipynb
-    04_register_agent.ipynb
     cleanup.ipynb
   pipelines/                    # SDP SQL pipeline files
     db_residential_sdp/
@@ -68,7 +67,6 @@ src/
         silver_rents.sql
         gold_portfolio_property_metrics.sql
         gold_portfolio_time_series.sql
-  agent/                        # Investment copilot agent code
 deploy.sh                       # Convenience deploy script (--all, --pipeline, --app, etc.)
 PROJECTPLAN.md                  # Full project plan with architecture and walkthrough
 ```
@@ -87,10 +85,8 @@ Every component in this demo maps to specific AI Dev Kit skill documentation. **
 | DABs Bundle Config | `.claude/skills/databricks-bundles/SKILL.md`, `SDP_guidance.md` |
 | Unity Catalog / Volumes | `.claude/skills/databricks-unity-catalog/SKILL.md`, `6-volumes.md` |
 | Synthetic Data Generation | `.claude/skills/databricks-synthetic-data-gen/SKILL.md` |
-| Model Serving / Agent | `.claude/skills/databricks-model-serving/SKILL.md`, `3-genai-agents.md`, `4-tools-integration.md`, `7-deployment.md`, `8-querying-endpoints.md` |
-| Agent Design | `.claude/skills/databricks-agent-bricks/SKILL.md`, `1-knowledge-assistants.md` |
+| In-App Agent (LangGraph) | `.claude/skills/databricks-model-serving/SKILL.md`, `8-querying-endpoints.md` (ChatDatabricks uses foundation model endpoints) |
 | Jobs | `.claude/skills/databricks-jobs/SKILL.md`, `examples.md` |
-| AI Functions (forecast) | `.claude/skills/databricks-ai-functions/SKILL.md`, `3-ai-forecast.md` |
 
 ---
 
@@ -112,8 +108,7 @@ databricks bundle validate -p vm                         # Validate bundle
 databricks bundle deploy -p vm                           # Deploy all resources
 databricks bundle run db_residential_sdp -p vm           # Run the SDP pipeline
 databricks bundle run lakebase_sync -p vm                # Run the Lakebase sync job
-databricks bundle run deploy_agent -p vm                 # Deploy the agent
-databricks bundle run db_residential_copilot_app -p vm   # Start the app
+databricks bundle run db_residential_copilot_app -p vm   # Deploy/restart the app
 ```
 
 ### Full Deployment
@@ -168,3 +163,14 @@ databricks bundle run db_residential_copilot_app -p vm   # Start the app
 - The app connects to Lakebase via SQLAlchemy/SQLModel (managed by `core/lakebase.py`).
 - Production auth uses Databricks credential callback (automatic token rotation).
 - Local dev uses `APX_DEV_DB_PORT` and `APX_DEV_DB_PWD` environment variables.
+
+## Style & Pattern References
+
+Before writing code or content for this project, read these files for voice, coding patterns, and project conventions:
+
+- `.me/persona.md` — Identity, role, communication style
+- `.me/writing-style.md` — Writing voice across all formats (emails, blogs, docs)
+- `.me/coding-style.md` — Project scaffolding, DAB config, deploy scripts, Python/SQL patterns
+- `.me/ai-dev-kit.md` — AI Dev Kit rules (DABs, MCP, deployment)
+- `.me/databricks-brand/databricks-design-guidelines.md` — Databricks brand colors, typography, spacing, components
+- `.me/databricks-brand/` — Logo assets (SVG, PNG) for use in apps and docs

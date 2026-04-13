@@ -1,27 +1,27 @@
-"""Investment copilot agent tools.
+"""Investment Copilot Agent — LangGraph ReAct agent running in-process.
 
-Two tools are available:
-  - query_portfolio: Executes read-only SQL against Unity Catalog gold tables
-  - forecast_deal: Runs a 5-year cash-flow projection with configurable assumptions
+Initialised at app startup with the Lakebase SQLAlchemy engine for portfolio queries.
+The agent uses ChatDatabricks (foundation model endpoint) and two tools:
+  - portfolio_query: executes read-only SQL against Lakebase (gold + app schemas)
+  - deal_forecast: runs a 5-year cash-flow projection
 """
 
+from __future__ import annotations
+
 import json
-from dataclasses import dataclass
+from typing import Any
 
-from databricks.sdk import WorkspaceClient
+from langchain_core.tools import tool
+from langchain_databricks import ChatDatabricks
+from langgraph.prebuilt import create_react_agent
+from sqlalchemy import Engine, text
 
-CATALOG = "startups_catalog"
-
-# Tables the agent can query
-AVAILABLE_TABLES = {
-    "portfolio_metrics": f"{CATALOG}.gold.gold_portfolio_property_metrics",
-    "time_series": f"{CATALOG}.gold.gold_portfolio_time_series",
-}
+from .core._config import logger
 
 TABLE_DESCRIPTIONS = """
-Available tables and their columns:
+Available tables (PostgreSQL / Lakebase) and their columns:
 
-1. startups_catalog.gold.gold_portfolio_property_metrics
+1. gold.portfolio_metrics
    Per-property aggregated metrics:
    - property_id, property_name, address, city, state, zip_code
    - property_type (multifamily/single_family/mixed_use), asset_class (A/B/C)
@@ -32,7 +32,7 @@ Available tables and their columns:
    - total_unit_months, latest_rent_date
    - annualized_gross_rent, cash_yield_pct, unrealized_gain
 
-2. startups_catalog.gold.gold_portfolio_time_series
+2. gold.portfolio_time_series
    Monthly portfolio-level metrics:
    - rent_month (DATE)
    - active_properties, total_aum, total_cost_basis
@@ -42,59 +42,71 @@ Available tables and their columns:
    - denver_properties, denver_occupancy_pct, other_occupancy_pct
 """
 
+SYSTEM_PROMPT = f"""You are the Investment Copilot, an AI assistant for a residential real estate investment firm.
 
-def query_portfolio(sql: str) -> str:
-    """Execute a read-only SQL query against the portfolio gold tables.
+You help portfolio managers and analysts by:
+1. Answering questions about the current portfolio (properties, occupancy, yields, trends)
+2. Running deal underwriting forecasts for potential acquisitions
+3. Identifying risks, opportunities, and actionable insights
 
-    Args:
-        sql: A SELECT query against the gold tables. Only SELECT statements are allowed.
-             Available tables: startups_catalog.gold.gold_portfolio_property_metrics,
-             startups_catalog.gold.gold_portfolio_time_series.
+## Available Data
 
-    Returns:
-        JSON string of query results (list of row dicts), or an error message.
+{TABLE_DESCRIPTIONS}
+
+## Guidelines
+
+- When asked about the portfolio, use the portfolio_query tool with PostgreSQL-compatible SQL against the tables listed above.
+- Use schema-qualified table names (e.g., gold.portfolio_metrics, gold.portfolio_time_series).
+- When asked to evaluate a potential deal, use the deal_forecast tool with the provided assumptions.
+- Always show your work: include the SQL you ran or the assumptions you used.
+- Format financial numbers clearly (e.g., $1,234,567 or 5.2%).
+- If you notice concerning trends (like the Denver vacancy spike), proactively flag them.
+- Be concise but thorough. Lead with the key insight, then provide supporting detail.
+- If the user's question is ambiguous, make reasonable assumptions and state them.
+"""
+
+
+# ---------------------------------------------------------------------------
+# Module-level SQLAlchemy engine — set by create_agent() at startup
+# ---------------------------------------------------------------------------
+_engine: Engine | None = None
+
+
+# ---------------------------------------------------------------------------
+# Tools
+# ---------------------------------------------------------------------------
+
+
+@tool
+def portfolio_query(sql: str) -> str:
+    """Execute a read-only SQL query against the portfolio database (Lakebase/PostgreSQL).
+
+    Use this to answer questions about properties, occupancy rates, yields,
+    time-series trends, and portfolio composition. Only SELECT queries are allowed.
+
+    Available tables:
+    - gold.portfolio_metrics (per-property metrics)
+    - gold.portfolio_time_series (monthly portfolio aggregates)
     """
+    if _engine is None:
+        return json.dumps({"error": "Database engine not initialised"})
+
     sql_stripped = sql.strip().rstrip(";").strip()
     if not sql_stripped.upper().startswith("SELECT"):
         return json.dumps({"error": "Only SELECT queries are allowed."})
 
     try:
-        w = WorkspaceClient()
-        result = w.statement_execution.execute_statement(
-            warehouse_id=_get_warehouse_id(w),
-            statement=sql_stripped,
-            wait_timeout="30s",
-        )
-        if result.status and result.status.state and "FAILED" in str(result.status.state):
-            return json.dumps({"error": str(result.status.error)})
-
-        if not result.manifest or not result.result:
-            return json.dumps({"rows": [], "message": "Query returned no results."})
-
-        columns = [col.name for col in result.manifest.schema.columns]
-        rows = []
-        for row_data in result.result.data_array or []:
-            rows.append(dict(zip(columns, row_data)))
-
+        with _engine.connect() as conn:
+            result = conn.execute(text(sql_stripped))
+            columns = list(result.keys())
+            rows = [dict(zip(columns, row)) for row in result.fetchall()]
         return json.dumps({"rows": rows, "row_count": len(rows)}, default=str)
     except Exception as e:
         return json.dumps({"error": str(e)})
 
 
-def _get_warehouse_id(w: WorkspaceClient) -> str:
-    """Find the first available serverless SQL warehouse."""
-    for wh in w.warehouses.list():
-        if wh.warehouse_type and "PRO" in str(wh.warehouse_type):
-            continue
-        if wh.id:
-            return wh.id
-    warehouses = list(w.warehouses.list())
-    if warehouses:
-        return warehouses[0].id
-    raise RuntimeError("No SQL warehouse found")
-
-
-def forecast_deal(
+@tool
+def deal_forecast(
     purchase_price: float,
     units: int,
     monthly_rent_per_unit: float,
@@ -106,23 +118,11 @@ def forecast_deal(
     exit_cap_rate_pct: float = 5.5,
     hold_years: int = 5,
 ) -> str:
-    """Run a 5-year cash-flow projection for a potential real estate deal.
+    """Run a 5-year cash-flow projection for a potential real estate acquisition.
 
-    Args:
-        purchase_price: Total purchase price in dollars.
-        units: Number of rental units.
-        monthly_rent_per_unit: Monthly rent per unit in dollars.
-        ltv_pct: Loan-to-value ratio as percentage (default 75).
-        interest_rate_pct: Annual interest rate as percentage (default 6.5).
-        loan_term_years: Loan amortization period in years (default 30).
-        rent_growth_pct: Annual rent growth as percentage (default 3.0).
-        expense_ratio_pct: Operating expenses as percentage of gross rent (default 35).
-        exit_cap_rate_pct: Exit capitalization rate as percentage (default 5.5).
-        hold_years: Investment hold period in years (default 5).
-
-    Returns:
-        JSON string with computed metrics: NOI, DSCR, cash-on-cash, IRR,
-        equity multiple, NPV, and year-by-year cash flows.
+    Returns NOI, DSCR, cash-on-cash yield, IRR, equity multiple, NPV,
+    and year-by-year cash flows. Use this when asked to evaluate a deal,
+    run a scenario, or compare investment options.
     """
     ltv = ltv_pct / 100
     rate = interest_rate_pct / 100
@@ -150,15 +150,14 @@ def forecast_deal(
     cash_flow_yr1 = noi - annual_debt_service
     cash_on_cash = (cash_flow_yr1 / equity * 100) if equity > 0 else 0
 
-    # Year-by-year cash flows
-    cash_flows = [-equity]
+    cash_flows: list[float] = [-equity]
     yearly_detail = []
     for yr in range(1, hold_years + 1):
         yr_rent = gross_rent * (1 + rent_growth) ** yr
         yr_noi = yr_rent * (1 - expense_ratio)
         yr_cf = yr_noi - annual_debt_service
 
-        detail = {
+        detail: dict[str, Any] = {
             "year": yr,
             "gross_rent": round(yr_rent, 2),
             "noi": round(yr_noi, 2),
@@ -187,12 +186,9 @@ def forecast_deal(
         cash_flows.append(yr_cf)
         yearly_detail.append(detail)
 
-    # IRR via Newton's method
     irr = _calc_irr(cash_flows)
-
     total_distributions = sum(cash_flows[1:])
     equity_multiple = (total_distributions / equity) if equity > 0 else 0
-
     discount_rate = 0.08
     npv = sum(cf / (1 + discount_rate) ** i for i, cf in enumerate(cash_flows))
 
@@ -231,3 +227,23 @@ def _calc_irr(
             return new_rate
         rate = new_rate
     return rate
+
+
+# ---------------------------------------------------------------------------
+# Agent factory
+# ---------------------------------------------------------------------------
+
+
+def create_agent(engine: Engine, llm_endpoint: str = "databricks-claude-sonnet-4") -> Any:
+    """Create and return a LangGraph ReAct agent.
+
+    Called once during app startup. The SQLAlchemy engine is stored at module
+    level so the ``portfolio_query`` tool can query Lakebase directly.
+    """
+    global _engine
+    _engine = engine
+
+    llm = ChatDatabricks(endpoint=llm_endpoint)
+    agent = create_react_agent(llm, [portfolio_query, deal_forecast], prompt=SYSTEM_PROMPT)
+    logger.info(f"Investment Copilot agent initialised (LLM: {llm_endpoint})")
+    return agent

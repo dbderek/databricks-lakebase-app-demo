@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TypeAlias
-from ._defaults import ConfigDependency, ClientDependency, UserWorkspaceClientDependency
+from ._defaults import AgentDependency, ConfigDependency, ClientDependency, UserWorkspaceClientDependency
 from ._headers import HeadersDependency
 from .lakebase import LakebaseDependency
 
@@ -25,7 +25,12 @@ class Dependencies:
     Headers: TypeAlias = HeadersDependency
     """Databricks Apps HTTP headers for the current request.
     Recommended usage: `headers: Dependencies.Headers`"""
+
     Session: TypeAlias = LakebaseDependency
     """Lakebase session dependency.
     Recommended usage: `session: Dependencies.Session`"""
+
+    Agent: TypeAlias = AgentDependency
+    """LangGraph investment copilot agent (initialised at startup).
+    Recommended usage: `agent: Dependencies.Agent`"""
 

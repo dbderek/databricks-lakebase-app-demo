@@ -10,7 +10,7 @@ sync:
 
 artifacts:
   app:
-    build: apx build
+    build: bash build.sh
     path: src/app
 
 variables:

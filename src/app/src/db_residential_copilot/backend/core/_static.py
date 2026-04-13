@@ -10,8 +10,8 @@ from starlette.responses import Response
 from starlette.staticfiles import NotModifiedResponse, StaticFiles
 from starlette.types import Scope
 
-from ..._metadata import api_prefix, dist_dir
 from ._config import logger
+from ._factory import API_PREFIX, DIST_DIR
 
 
 class CachedStaticFiles(StaticFiles):
@@ -54,7 +54,7 @@ def add_not_found_handler(app: FastAPI) -> None:
             path = request.url.path
             accept = request.headers.get("accept", "")
 
-            is_api = path.startswith(api_prefix)
+            is_api = path.startswith(API_PREFIX)
             is_get_page_nav = request.method == "GET" and "text/html" in accept
 
             # Heuristic: if the last path segment looks like a file (has a dot), don't SPA-fallback
@@ -62,7 +62,7 @@ def add_not_found_handler(app: FastAPI) -> None:
 
             if (not is_api) and is_get_page_nav and (not looks_like_asset):
                 # Let the SPA router handle it
-                return FileResponse(dist_dir / "index.html")
+                return FileResponse(DIST_DIR / "index.html")
         # Default: return the original HTTP error (JSON 404 for API, etc.)
         return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
 

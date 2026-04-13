@@ -1,90 +1,85 @@
+"""FastAPI application factory with explicit lifespan management."""
+
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from functools import lru_cache
+from pathlib import Path
 
+from databricks.sdk import WorkspaceClient
 from fastapi import APIRouter, FastAPI
 
-from ..._metadata import api_prefix, app_name, dist_dir
-from ._base import LifespanDependency
-from ._config import logger
+from ._config import AppConfig, logger
+from .lakebase import DatabaseConfig, create_db_engine, initialize_models, validate_db
+from ..agent import create_agent
 
-# --- Lifespan ---
+
+API_PREFIX = "/api"
+APP_NAME = "db-residential-copilot"
+DIST_DIR = Path(__file__).parent.parent.parent / "__dist__"
 
 
 @asynccontextmanager
-async def _chain_dep_lifespans(
-    deps: list[LifespanDependency],
-    app: FastAPI,
-) -> AsyncIterator[None]:
-    """Chain multiple dependency lifespans into a single nested context manager."""
-    if not deps:
-        yield
-        return
+async def _lifespan(app: FastAPI):
+    # 1. Config
+    config = AppConfig()
+    app.state.config = config
+    logger.info(f"Starting app with configuration:\n{config}")
 
-    head, *tail = deps
+    # 2. WorkspaceClient (SP credentials from Databricks Apps framework)
+    ws = WorkspaceClient()
+    app.state.workspace_client = ws
 
-    async with head.lifespan(app):
-        async with _chain_dep_lifespans(tail, app):
-            yield
+    # 3. Lakebase engine (OAuth token auth for Autoscale)
+    db_config = DatabaseConfig()  # ty: ignore[missing-argument]
+    engine = create_db_engine(db_config, ws=ws)
+    try:
+        validate_db(engine, db_config)
+    except Exception as e:
+        logger.error(f"DB validation failed (continuing anyway): {e}")
+    try:
+        initialize_models(engine)
+    except Exception as e:
+        logger.error(f"Model init failed (continuing anyway): {e}")
+    app.state.engine = engine
 
+    # 4. Investment Copilot agent (LangGraph, in-process)
+    try:
+        agent = create_agent(engine, llm_endpoint=config.llm_endpoint)
+        app.state.agent = agent
+    except Exception as e:
+        logger.error(f"Agent init failed (continuing anyway): {e}")
+        app.state.agent = None
 
-# --- Factory ---
+    yield
+
+    engine.dispose()
 
 
 def create_app(
     *,
     routers: list[APIRouter] | None = None,
 ) -> FastAPI:
-    """Create and configure a FastAPI application.
+    """Create and configure the FastAPI application."""
+    app = FastAPI(title=APP_NAME, lifespan=_lifespan)
 
-    Dependencies are discovered automatically from the Dependency registry.
-    All concrete Dependency subclasses that have been imported are instantiated
-    and their lifespans are chained in import order.
-
-    Args:
-        routers: List of APIRouter instances to include in the app.
-
-    Returns:
-        Configured FastAPI application instance.
-    """
-    all_deps: list[LifespanDependency] = []
-    for dep in LifespanDependency._registry:
-        try:
-            all_deps.append(dep())
-        except Exception as e:
-            logger.error(f"Failed to instantiate dependency {dep.__name__}: {e}")
-            raise e
-
-    @asynccontextmanager
-    async def _composed_lifespan(app: FastAPI):
-        async with _chain_dep_lifespans(all_deps, app):
-            yield
-
-    app = FastAPI(title=app_name, lifespan=_composed_lifespan)
-
-    api_router: APIRouter = create_router()
-    for dep in all_deps:
-        for r in dep.get_routers():
-            api_router.include_router(r)
+    api_router = create_router()
     app.include_router(api_router)
 
     for router in routers or []:
         if router is not api_router:
             app.include_router(router)
 
-    if dist_dir.exists():
+    if DIST_DIR.exists():
         from ._static import CachedStaticFiles, add_not_found_handler
 
-        app.mount("/", CachedStaticFiles(directory=dist_dir, html=True))
+        app.mount("/", CachedStaticFiles(directory=DIST_DIR, html=True))
         add_not_found_handler(app)
 
     return app
 
 
-# singleton APIRouter with the application's API prefix
 @lru_cache(maxsize=1)
 def create_router() -> APIRouter:
-    """Return the singleton APIRouter with the application's API prefix."""
-    return APIRouter(prefix=api_prefix)
+    """Return the singleton APIRouter with the API prefix."""
+    return APIRouter(prefix=API_PREFIX)

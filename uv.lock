@@ -473,7 +473,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "databricks-sdk", specifier = ">=0.74.0" },
+    { name = "databricks-sdk", specifier = ">=0.81.0" },
     { name = "fastapi", specifier = ">=0.119.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.2.11" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
@@ -793,6 +793,7 @@ version = "0.1.0"
 source = { virtual = "src/agent" }
 dependencies = [
     { name = "databricks-sdk" },
+    { name = "langchain-core" },
     { name = "langchain-databricks" },
     { name = "langgraph" },
     { name = "mlflow" },
@@ -801,6 +802,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "databricks-sdk", specifier = ">=0.81.0" },
+    { name = "langchain-core", specifier = ">=0.3.0" },
     { name = "langchain-databricks", specifier = ">=0.1.0" },
     { name = "langgraph", specifier = ">=0.2.0" },
     { name = "mlflow", specifier = ">=2.12.0" },
