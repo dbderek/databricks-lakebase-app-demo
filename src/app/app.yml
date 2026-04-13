@@ -2,3 +2,7 @@ command: ["uvicorn", "db_residential_copilot.backend.app:app", "--workers", "2"]
 env:
   - name: DB_RESIDENTIAL_COPILOT_LLM_ENDPOINT
     value: databricks-claude-sonnet-4
+  - name: PGHOST
+    value: "placeholder.database.cloud.databricks.com"
+  - name: PGDATABASE
+    value: "databricks_postgres"

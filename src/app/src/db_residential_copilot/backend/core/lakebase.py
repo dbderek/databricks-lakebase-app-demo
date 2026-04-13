@@ -122,7 +122,18 @@ def create_db_engine(db_config: DatabaseConfig, ws: Any | None = None) -> Engine
         host = db_config.host
     port = db_config.port
     database = db_config.database_name
+
+    # Resolve username: prefer PGUSER env var, then SP client ID from WorkspaceClient.
+    # Lakebase Autoscale requires the SP client ID (or user email) as the Postgres username.
     username = os.environ.get("PGUSER", "")
+    if not username:
+        try:
+            me = ws.current_user.me()
+            # Service principals have application_id; users have user_name
+            username = getattr(me, "application_id", None) or me.user_name or ""
+            logger.info(f"Resolved database username from SDK: {username}")
+        except Exception as e:
+            logger.warning(f"Could not resolve username from SDK: {e}")
 
     # Generate initial OAuth token
     _current_token = _generate_token(ws)

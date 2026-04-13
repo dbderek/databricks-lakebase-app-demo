@@ -4,9 +4,6 @@ resources:
       name: "db-residential-copilot-${bundle.target}"
       description: "Databricks Residential Investment Copilot"
       source_code_path: ../src/app/.build
-      resources:
-        - name: "db"
-          database:
-            database_name: "databricks_postgres"
-            instance_name: "db-residential-copilot"
-            permission: "CAN_CONNECT_AND_CREATE"
+      # Database resource is added via deploy.sh after both the app
+      # and Lakebase project are provisioned (Autoscale projects
+      # aren't visible as "database instances" until they exist).
