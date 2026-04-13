@@ -57,7 +57,7 @@ src/
     01_generate_sample_data.ipynb
     02_setup_lakebase.ipynb
     03_sync_gold_to_lakebase.ipynb
-    cleanup.ipynb
+cleanup.sh                      # Tear-down script (reverse of deploy)
   pipelines/                    # SDP SQL pipeline files
     db_residential_sdp/
       transformations/

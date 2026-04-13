@@ -122,7 +122,7 @@ src/
     01_generate_sample_data.ipynb
     02_setup_lakebase.ipynb
     03_sync_gold_to_lakebase.ipynb
-    cleanup.ipynb
+cleanup.sh                      # Tear-down script (reverse of deploy)
   pipelines/
     db_residential_sdp/
       transformations/
@@ -182,8 +182,13 @@ databricks bundle run db_residential_copilot_app -p vm   # Deploy/restart app
 
 ## Cleanup
 
-1. Run `cleanup.ipynb` on the workspace to remove synced tables, Lakebase project, and schemas
-2. Run `databricks bundle destroy -t dev -p vm` to remove DABs-managed resources (pipeline, jobs, app)
+```bash
+./cleanup.sh              # Tears down everything (prompts for confirmation)
+./cleanup.sh -y           # Skip confirmation
+./cleanup.sh --skip-bundle  # Keep DABs resources, only remove data/Lakebase
+```
+
+This deletes in order: synced tables, Lakebase project, UC schemas, then DABs bundle.
 
 ---
 
