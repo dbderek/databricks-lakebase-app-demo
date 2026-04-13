@@ -1,25 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @import "tailwindcss";
+
+@theme {
+  --font-display: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
 
 @layer base {
   :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.15 0.01 260);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.15 0.01 260);
-    --primary: oklch(0.45 0.15 260);
-    --primary-foreground: oklch(0.98 0 0);
-    --secondary: oklch(0.96 0.01 260);
-    --secondary-foreground: oklch(0.2 0.01 260);
-    --muted: oklch(0.96 0.01 260);
-    --muted-foreground: oklch(0.55 0.02 260);
-    --accent: oklch(0.96 0.01 260);
-    --accent-foreground: oklch(0.2 0.01 260);
-    --destructive: oklch(0.55 0.2 25);
-    --destructive-foreground: oklch(0.98 0 0);
-    --border: oklch(0.9 0.01 260);
-    --input: oklch(0.9 0.01 260);
-    --ring: oklch(0.45 0.15 260);
-    --radius: 0.5rem;
+    /* Databricks brand palette */
+    --db-orange: #FF3621;
+    --db-orange-light: #FF5E4D;
+    --db-blue: #00A1F1;
+    --db-dark: #1B3139;
+    --db-dark-deep: #0F1E24;
+    --db-dark-surface: #1A2B33;
+    --db-dark-card: #1F3340;
+    --db-dark-elevated: #253E4C;
+    --db-green: #00BFA5;
+    --db-purple: #7C4DFF;
+    --db-yellow: #FFC107;
+
+    /* Semantic tokens */
+    --background: var(--db-dark-deep);
+    --foreground: #E8ECF0;
+    --card: var(--db-dark-card);
+    --card-hover: var(--db-dark-elevated);
+    --card-foreground: #E8ECF0;
+    --primary: var(--db-orange);
+    --primary-foreground: #FFFFFF;
+    --secondary: var(--db-dark-surface);
+    --secondary-foreground: #C4D0D8;
+    --muted: rgba(255, 255, 255, 0.06);
+    --muted-foreground: #8A9BAA;
+    --accent: rgba(255, 54, 33, 0.12);
+    --accent-foreground: var(--db-orange-light);
+    --destructive: #F44336;
+    --destructive-foreground: #FFFFFF;
+    --success: var(--db-green);
+    --warning: var(--db-yellow);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-bright: rgba(255, 255, 255, 0.14);
+    --input: rgba(255, 255, 255, 0.08);
+    --input-focus: var(--db-blue);
+    --ring: var(--db-orange);
+    --radius: 0.625rem;
+
+    /* Glow effects */
+    --glow-orange: 0 0 80px rgba(255, 54, 33, 0.15);
+    --glow-blue: 0 0 80px rgba(0, 161, 241, 0.1);
   }
 }
 
@@ -27,9 +58,270 @@
   * {
     border-color: var(--border);
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .glass {
+    background: rgba(31, 51, 64, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-subtle {
+    background: rgba(31, 51, 64, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .text-gradient-orange {
+    background: linear-gradient(135deg, var(--db-orange) 0%, var(--db-orange-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-cool {
+    background: linear-gradient(135deg, var(--db-blue) 0%, var(--db-green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 6s ease-in-out infinite 2s;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .animate-gradient-shift {
+    animation: gradient-shift 8s ease infinite;
+    background-size: 200% 200%;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Copilot markdown styles */
+.copilot-markdown {
+  line-height: 1.65;
+}
+
+.copilot-markdown h1,
+.copilot-markdown h2,
+.copilot-markdown h3,
+.copilot-markdown h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+
+.copilot-markdown h1 { font-size: 1.25rem; }
+.copilot-markdown h2 { font-size: 1.125rem; }
+.copilot-markdown h3 { font-size: 1rem; }
+.copilot-markdown h4 { font-size: 0.875rem; }
+
+.copilot-markdown h1:first-child,
+.copilot-markdown h2:first-child,
+.copilot-markdown h3:first-child {
+  margin-top: 0;
+}
+
+.copilot-markdown p {
+  margin-bottom: 0.75em;
+}
+
+.copilot-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.copilot-markdown strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.copilot-markdown em {
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+.copilot-markdown ul,
+.copilot-markdown ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.copilot-markdown ul { list-style-type: disc; }
+.copilot-markdown ol { list-style-type: decimal; }
+
+.copilot-markdown li {
+  margin-bottom: 0.3em;
+}
+
+.copilot-markdown li::marker {
+  color: var(--db-orange);
+}
+
+.copilot-markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--db-orange-light);
+}
+
+.copilot-markdown pre {
+  margin: 0.75em 0;
+  padding: 0.875em 1em;
+  border-radius: 8px;
+  background: rgba(15, 30, 36, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+}
+
+.copilot-markdown pre code {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8em;
+  color: var(--foreground);
+}
+
+.copilot-markdown blockquote {
+  margin: 0.75em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--db-orange);
+  background: rgba(255, 54, 33, 0.05);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted-foreground);
+}
+
+.copilot-markdown table {
+  width: 100%;
+  margin: 0.75em 0;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+
+.copilot-markdown th {
+  text-align: left;
+  padding: 0.5em 0.75em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.copilot-markdown td {
+  padding: 0.5em 0.75em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.copilot-markdown tr:last-child td {
+  border-bottom: none;
+}
+
+.copilot-markdown hr {
+  margin: 1em 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.copilot-markdown a {
+  color: var(--db-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.copilot-markdown a:hover {
+  color: var(--db-orange-light);
 }

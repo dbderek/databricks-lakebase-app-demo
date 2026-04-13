@@ -67,9 +67,10 @@ You help portfolio managers and analysts by:
 
 
 # ---------------------------------------------------------------------------
-# Module-level SQLAlchemy engine — set by create_agent() at startup
+# Module-level state
 # ---------------------------------------------------------------------------
 _engine: Engine | None = None
+_agent_cache: dict[str, Any] = {}
 
 
 # ---------------------------------------------------------------------------
@@ -234,16 +235,28 @@ def _calc_irr(
 # ---------------------------------------------------------------------------
 
 
-def create_agent(engine: Engine, llm_endpoint: str = "databricks-claude-sonnet-4") -> Any:
-    """Create and return a LangGraph ReAct agent.
+def init_agent_engine(engine: Engine, default_endpoint: str = "databricks-claude-sonnet-4") -> Any:
+    """Initialise the agent module with the Lakebase engine and create the default agent.
 
-    Called once during app startup. The SQLAlchemy engine is stored at module
-    level so the ``portfolio_query`` tool can query Lakebase directly.
+    Called once during app startup. Returns the default agent.
     """
     global _engine
     _engine = engine
+    return get_agent(default_endpoint)
 
-    llm = ChatDatabricks(endpoint=llm_endpoint)
+
+def get_agent(llm_endpoint: str) -> Any:
+    """Get or create a cached LangGraph ReAct agent for the given LLM endpoint."""
+    if llm_endpoint in _agent_cache:
+        return _agent_cache[llm_endpoint]
+
+    # Some foundation model endpoints (GPT-5 Mini/Nano) only support temperature=1
+    kwargs: dict[str, Any] = {"endpoint": llm_endpoint}
+    if "gpt-5-mini" in llm_endpoint or "gpt-5-nano" in llm_endpoint:
+        kwargs["temperature"] = 1.0
+
+    llm = ChatDatabricks(**kwargs)
     agent = create_react_agent(llm, [portfolio_query, deal_forecast], prompt=SYSTEM_PROMPT)
+    _agent_cache[llm_endpoint] = agent
     logger.info(f"Investment Copilot agent initialised (LLM: {llm_endpoint})")
     return agent

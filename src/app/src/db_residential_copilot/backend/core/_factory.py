@@ -11,7 +11,7 @@ from fastapi import APIRouter, FastAPI
 
 from ._config import AppConfig, logger
 from .lakebase import DatabaseConfig, create_db_engine, initialize_models, validate_db
-from ..agent import create_agent
+from ..agent import init_agent_engine
 
 
 API_PREFIX = "/api"
@@ -45,7 +45,7 @@ async def _lifespan(app: FastAPI):
 
     # 4. Investment Copilot agent (LangGraph, in-process)
     try:
-        agent = create_agent(engine, llm_endpoint=config.llm_endpoint)
+        agent = init_agent_engine(engine, default_endpoint=config.llm_endpoint)
         app.state.agent = agent
     except Exception as e:
         logger.error(f"Agent init failed (continuing anyway): {e}")

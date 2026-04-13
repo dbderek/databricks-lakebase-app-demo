@@ -197,6 +197,7 @@ class DealScenarioOut(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    model: Optional[str] = None
 
 
 class ChatAudit(SQLModel, table=True):

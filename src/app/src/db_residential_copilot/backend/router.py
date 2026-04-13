@@ -10,6 +10,7 @@ from langchain_core.messages import AIMessageChunk, HumanMessage
 from sqlmodel import select
 
 from .core import Dependencies, create_router, logger
+from .agent import get_agent
 from .models import (
     ChatAudit,
     ChatRequest,
@@ -231,12 +232,24 @@ def get_deal(deal_id: str, session: Dependencies.Session):
 @router.post("/chat", operation_id="chat")
 def chat(
     req: ChatRequest,
-    agent: Dependencies.Agent,
+    default_agent: Dependencies.Agent,
     config: Dependencies.Config,
     session: Dependencies.Session,
     headers: Dependencies.Headers,
 ):
     start_time = time.time()
+    model_endpoint = req.model or config.llm_endpoint
+
+    # Resolve agent: use cached per-model agent, or fall back to default
+    if req.model and req.model != config.llm_endpoint:
+        try:
+            agent = get_agent(req.model)
+        except Exception as e:
+            logger.error(f"Failed to create agent for {req.model}: {e}")
+            agent = default_agent
+            model_endpoint = config.llm_endpoint
+    else:
+        agent = default_agent
 
     def event_stream():
         full_response: list[str] = []
@@ -252,8 +265,16 @@ def chat(
                 stream_mode="messages",
             ):
                 if isinstance(msg, AIMessageChunk) and msg.content:
-                    full_response.append(msg.content)
-                    yield f"data: {json.dumps({'content': msg.content})}\n\n"
+                    # Some models return content as a list of blocks
+                    content = msg.content
+                    if isinstance(content, list):
+                        content = "".join(
+                            block if isinstance(block, str) else block.get("text", "")
+                            for block in content
+                        )
+                    if content:
+                        full_response.append(content)
+                        yield f"data: {json.dumps({'content': content})}\n\n"
         except Exception as e:
             logger.error(f"Chat error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -267,7 +288,7 @@ def chat(
                 user_email=headers.user_email,
                 question=req.message,
                 answer_summary=answer[:500] if answer else None,
-                model_endpoint=config.llm_endpoint,
+                model_endpoint=model_endpoint,
                 latency_ms=latency_ms,
             )
             session.add(audit)
