@@ -17,13 +17,13 @@ variables:
   catalog:
     default: "startups_catalog"
   raw_schema:
-    default: "raw"
+    default: "dbx_res_raw"
   bronze_schema:
-    default: "bronze"
+    default: "dbx_res_bronze"
   silver_schema:
-    default: "silver"
+    default: "dbx_res_silver"
   gold_schema:
-    default: "gold"
+    default: "dbx_res_gold"
   warehouse_id:
     lookup:
       warehouse: "Serverless Starter Warehouse"

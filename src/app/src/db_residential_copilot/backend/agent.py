@@ -21,7 +21,7 @@ from .core._config import logger
 TABLE_DESCRIPTIONS = """
 Available tables (PostgreSQL / Lakebase) and their columns:
 
-1. gold.portfolio_metrics
+1. dbx_res_gold.portfolio_metrics
    Per-property aggregated metrics:
    - property_id, property_name, address, city, state, zip_code
    - property_type (multifamily/single_family/mixed_use), asset_class (A/B/C)
@@ -32,7 +32,7 @@ Available tables (PostgreSQL / Lakebase) and their columns:
    - total_unit_months, latest_rent_date
    - annualized_gross_rent, cash_yield_pct, unrealized_gain
 
-2. gold.portfolio_time_series
+2. dbx_res_gold.portfolio_time_series
    Monthly portfolio-level metrics:
    - rent_month (DATE)
    - active_properties, total_aum, total_cost_basis
@@ -56,7 +56,7 @@ You help portfolio managers and analysts by:
 ## Guidelines
 
 - When asked about the portfolio, use the portfolio_query tool with PostgreSQL-compatible SQL against the tables listed above.
-- Use schema-qualified table names (e.g., gold.portfolio_metrics, gold.portfolio_time_series).
+- Use schema-qualified table names (e.g., dbx_res_gold.portfolio_metrics, dbx_res_gold.portfolio_time_series).
 - When asked to evaluate a potential deal, use the deal_forecast tool with the provided assumptions.
 - Always show your work: include the SQL you ran or the assumptions you used.
 - Format financial numbers clearly (e.g., $1,234,567 or 5.2%).
@@ -86,8 +86,8 @@ def portfolio_query(sql: str) -> str:
     time-series trends, and portfolio composition. Only SELECT queries are allowed.
 
     Available tables:
-    - gold.portfolio_metrics (per-property metrics)
-    - gold.portfolio_time_series (monthly portfolio aggregates)
+    - dbx_res_gold.portfolio_metrics (per-property metrics)
+    - dbx_res_gold.portfolio_time_series (monthly portfolio aggregates)
     """
     if _engine is None:
         return json.dumps({"error": "Database engine not initialised"})

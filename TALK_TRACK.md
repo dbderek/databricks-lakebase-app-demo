@@ -36,9 +36,9 @@
 
 Open the **Unity Catalog** link. Navigate to `startups_catalog`.
 
-> "Everything starts with Unity Catalog. We have a single catalog with four schemas that represent our data lifecycle — raw, bronze, silver, gold. Every table is governed, auditable, and lineage-tracked."
+> "Everything starts with Unity Catalog. We have a single catalog with four schemas that represent our data lifecycle — dbx_res_raw, dbx_res_bronze, dbx_res_silver, dbx_res_gold. Every table is governed, auditable, and lineage-tracked."
 
-Show the schema hierarchy: `raw` → `bronze` → `silver` → `gold`.
+Show the schema hierarchy: `dbx_res_raw` → `dbx_res_bronze` → `dbx_res_silver` → `dbx_res_gold`.
 
 ### SDP Pipeline — Bronze to Gold
 
@@ -138,7 +138,7 @@ Try these in order:
 **1. Portfolio question:**
 > Type: "What's our current exposure to Denver?"
 
-> "The agent writes SQL against Lakebase, executes it, and synthesizes the answer. Notice it's querying the same `gold.portfolio_metrics` table the dashboard uses."
+> "The agent writes SQL against Lakebase, executes it, and synthesizes the answer. Notice it's querying the same `dbx_res_gold.portfolio_metrics` table the dashboard uses."
 
 **2. Trend analysis:**
 > Type: "Show me properties with occupancy below 85%"

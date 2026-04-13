@@ -21,7 +21,7 @@ class VersionOut(BaseModel):
 
 class PortfolioMetric(SQLModel, table=True):
     __tablename__ = "portfolio_metrics"
-    __table_args__ = {"schema": "gold"}
+    __table_args__ = {"schema": "dbx_res_gold"}
 
     property_id: str = Field(primary_key=True)
     property_name: str
@@ -81,7 +81,7 @@ class PortfolioMetricOut(BaseModel):
 
 class PortfolioTimeSeries(SQLModel, table=True):
     __tablename__ = "portfolio_time_series"
-    __table_args__ = {"schema": "gold"}
+    __table_args__ = {"schema": "dbx_res_gold"}
 
     rent_month: date = Field(primary_key=True)
     active_properties: int
@@ -121,7 +121,7 @@ class PortfolioTimeSeriesOut(BaseModel):
 
 class DealScenario(SQLModel, table=True):
     __tablename__ = "deal_scenarios"
-    __table_args__ = {"schema": "app"}
+    __table_args__ = {"schema": "dbx_res_app"}
 
     deal_id: str = Field(primary_key=True)
     property_name: str
@@ -202,7 +202,7 @@ class ChatRequest(BaseModel):
 
 class ChatAudit(SQLModel, table=True):
     __tablename__ = "chat_audit"
-    __table_args__ = {"schema": "app"}
+    __table_args__ = {"schema": "dbx_res_app"}
 
     chat_id: str = Field(primary_key=True)
     user_email: Optional[str] = None

@@ -1,5 +1,5 @@
 -- Gold: Per-property aggregated metrics for the portfolio overview
-CREATE OR REFRESH MATERIALIZED VIEW startups_catalog.gold.gold_portfolio_property_metrics
+CREATE OR REFRESH MATERIALIZED VIEW startups_catalog.dbx_res_gold.gold_portfolio_property_metrics
 CLUSTER BY (property_type, city)
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true'
@@ -32,7 +32,7 @@ SELECT
   ROUND(r.avg_monthly_rent * p.units * 12, 2) AS annualized_gross_rent,
   ROUND((r.avg_rent_collected * p.units * 12) / NULLIF(p.purchase_price, 0) * 100, 2) AS cash_yield_pct,
   ROUND(p.current_appraised_value - p.purchase_price, 2) AS unrealized_gain
-FROM startups_catalog.silver.silver_properties p
+FROM startups_catalog.dbx_res_silver.silver_properties p
 LEFT JOIN (
   SELECT
     property_id,
@@ -42,6 +42,6 @@ LEFT JOIN (
     SUM(rent_collected) / NULLIF(SUM(monthly_rent), 0) AS collection_rate,
     COUNT(*) AS total_unit_months,
     MAX(rent_date) AS latest_rent_date
-  FROM startups_catalog.silver.silver_rents
+  FROM startups_catalog.dbx_res_silver.silver_rents
   GROUP BY property_id
 ) r ON p.property_id = r.property_id;

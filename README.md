@@ -30,7 +30,7 @@ End-to-end demo showing the full Databricks platform story: governed lakehouse, 
 
 | Layer | What | Where |
 |---|---|---|
-| **Raw data** | ~50 properties, ~80K rent records (JSON) | UC Volume `startups_catalog.raw.data` |
+| **Raw data** | ~50 properties, ~80K rent records (JSON) | UC Volume `startups_catalog.dbx_res_raw.data` |
 | **SDP Pipeline** | Bronze → Silver → Gold (SQL, serverless + Photon) | `src/pipelines/db_residential_sdp/` |
 | **Lakebase** | PostgreSQL-compatible operational DB (Autoscale) | Instance `db-residential-copilot` |
 | **App** | React + FastAPI on Databricks Apps (apx toolkit) | `src/app/` |
@@ -150,7 +150,7 @@ Scenario modeling form for potential acquisitions. Enter property details and fi
 
 ### Investment Copilot
 Chat interface backed by a LangGraph ReAct agent running in-process. The agent has two tools:
-- **portfolio_query** — executes read-only SQL against Lakebase (gold schema tables)
+- **portfolio_query** — executes read-only SQL against Lakebase (dbx_res_gold schema tables)
 - **deal_forecast** — runs 5-year cash-flow projections
 
 Users can select from multiple foundation models (Claude Sonnet/Opus/Haiku, GPT-5/Mini/Nano, Gemini 2.5 Pro) via a dropdown.

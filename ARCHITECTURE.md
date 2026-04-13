@@ -14,7 +14,7 @@
 |  |                  |     |   +----------+    +-----------+    +----------+   |     |
 |  |  /Volumes/       |---->|   |  BRONZE  |--->|  SILVER   |--->|   GOLD   |   |     |
 |  |  db_residential_ |     |   |          |    |           |    |          |   |     |
-|  |  demo/raw/data/  |     |   | Auto     |    | Type cast |    | Agg      |   |     |
+|  |  demo/dbx_res_raw/data/  |     |   | Auto     |    | Type cast |    | Agg      |   |     |
 |  |                  |     |   | Loader   |    | Dedupe    |    | metrics  |   |     |
 |  |  properties/     |     |   | Stream   |    | Quality   |    | Joins    |   |     |
 |  |    *.json        |     |   | Tables   |    | Checks    |    | Mat.Views|   |     |
@@ -32,7 +32,7 @@
 |  |  Instance: db-residential-copilot        |    |  Name: db-residential-copilot|   |
 |  |  Capacity: CU_1                          |    |                              |   |
 |  |                                          |    |  +------------------------+  |   |
-|  |  Schema: app                             |    |  |  FastAPI Backend       |  |   |
+|  |  Schema: dbx_res_app                             |    |  |  FastAPI Backend       |  |   |
 |  |   - portfolio_metrics                    |<===|  |                        |  |   |
 |  |   - deal_scenarios                       |    |  |  GET  /api/portfolio   |  |   |
 |  |   - chat_audit                           |    |  |  GET  /api/properties  |  |   |
@@ -88,10 +88,10 @@ Data Flow (simplified):
 
 ### 1. Unity Catalog Volume (Raw Data)
 
-- **Location:** `startups_catalog.raw.data`
+- **Location:** `startups_catalog.dbx_res_raw.data`
 - **Paths:**
-  - `/Volumes/startups_catalog/raw/data/properties/*.json` -- property records (address, units, purchase price, acquisition date)
-  - `/Volumes/startups_catalog/raw/data/rents/*.json` -- rent records (monthly rent, occupancy, dates)
+  - `/Volumes/startups_catalog/dbx_res_raw/data/properties/*.json` -- property records (address, units, purchase price, acquisition date)
+  - `/Volumes/startups_catalog/dbx_res_raw/data/rents/*.json` -- rent records (monthly rent, occupancy, dates)
 - **Role:** Landing zone for raw JSON data. The synthetic data generation notebook (`01_generate_sample_data.ipynb`) populates this volume.
 
 ### 2. SDP SQL Pipeline (Bronze / Silver / Gold)
@@ -100,19 +100,19 @@ Data Flow (simplified):
 - **Engine:** Serverless + Photon
 - **DABs resource:** `resources/pipeline.yml`
 
-#### Bronze Layer (`startups_catalog.bronze`)
+#### Bronze Layer (`startups_catalog.dbx_res_bronze`)
 
 - `bronze_properties` -- Auto Loader streaming table from properties JSON
 - `bronze_rents` -- Auto Loader streaming table from rents JSON
 - Ingests raw JSON with schema inference; preserves all source fields.
 
-#### Silver Layer (`startups_catalog.silver`)
+#### Silver Layer (`startups_catalog.dbx_res_silver`)
 
 - `silver_properties` -- Type-cast, deduped by `property_id`
 - `silver_rents` -- Type-cast, date-normalized, occupancy flag added
 - Applies data quality checks and cleaning transformations.
 
-#### Gold Layer (`startups_catalog.gold`)
+#### Gold Layer (`startups_catalog.dbx_res_gold`)
 
 - `gold_portfolio_property_metrics` -- Per-property aggregated metrics (avg rent, occupancy rate, units, purchase price, acquisition date)
 - `gold_portfolio_time_series` -- Time-series view of portfolio performance (AUM, cash yield over time)
@@ -127,9 +127,9 @@ Data Flow (simplified):
 
 #### App Schema Tables
 
-- `app.portfolio_metrics` -- Mirrors gold portfolio metrics, optimized for app queries
-- `app.deal_scenarios` -- Stores deal input assumptions and computed outputs (IRR, DSCR, etc.)
-- `app.chat_audit` -- Logs copilot questions and answer summaries
+- `dbx_res_app.portfolio_metrics` -- Mirrors gold portfolio metrics, optimized for app queries
+- `dbx_res_app.deal_scenarios` -- Stores deal input assumptions and computed outputs (IRR, DSCR, etc.)
+- `dbx_res_app.chat_audit` -- Logs copilot questions and answer summaries
 
 #### Sync Mechanism
 
@@ -171,7 +171,7 @@ The `lakebase_sync` job (`resources/sync_job.yml`) runs notebook `03_sync_gold_t
 
 #### Agent Tools
 
-- **portfolio_query** -- Executes read-only SQL against Lakebase (gold schema tables: `gold.portfolio_metrics`, `gold.portfolio_time_series`)
+- **portfolio_query** -- Executes read-only SQL against Lakebase (gold schema tables: `dbx_res_gold.portfolio_metrics`, `dbx_res_gold.portfolio_time_series`)
 - **deal_forecast** -- Runs 5-year cash-flow projections with configurable assumptions (LTV, rent growth, expense ratio, exit cap rate)
 
 #### Integration
@@ -182,8 +182,8 @@ The FastAPI `/api/chat` endpoint creates a LangGraph agent in-process, streams r
 
 ## Data Flow Summary
 
-1. **Ingest:** Raw JSON files land in the UC Volume (`startups_catalog.raw.data`).
-2. **Transform:** The SDP SQL pipeline processes data through bronze (raw ingestion), silver (cleaned/typed), and gold (aggregated metrics) layers.
+1. **Ingest:** Raw JSON files land in the UC Volume (`startups_catalog.dbx_res_raw.data`).
+2. **Transform:** The SDP SQL pipeline processes data through dbx_res_bronze (raw ingestion), dbx_res_silver (cleaned/typed), and dbx_res_gold (aggregated metrics) layers.
 3. **Sync:** The Lakebase sync job copies gold tables into the Lakebase PostgreSQL database for low-latency app access.
 4. **Serve:** The apx app reads from Lakebase via SQLModel and writes user-generated scenarios back.
 5. **AI:** The in-process investment copilot agent queries Lakebase directly and runs forecasts via foundation model endpoints.

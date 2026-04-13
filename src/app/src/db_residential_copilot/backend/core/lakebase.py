@@ -190,14 +190,14 @@ def validate_db(engine: Engine, db_config: DatabaseConfig) -> None:
 def initialize_models(engine: Engine) -> None:
     """Create app-writable tables (deal_scenarios, chat_audit).
 
-    Synced tables (gold.portfolio_metrics, gold.portfolio_time_series) are
+    Synced tables (dbx_res_gold.portfolio_metrics, dbx_res_gold.portfolio_time_series) are
     managed by the Lakebase sync pipeline and must NOT be created here.
     """
     logger.info("Initializing app-writable database models")
     app_tables = [
         table
         for table in SQLModel.metadata.sorted_tables
-        if table.schema == "app"
+        if table.schema == "dbx_res_app"
     ]
     SQLModel.metadata.create_all(engine, tables=app_tables)
     logger.info("App-writable database models initialized successfully")

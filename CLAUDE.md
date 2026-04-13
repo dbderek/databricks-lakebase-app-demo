@@ -138,10 +138,10 @@ databricks bundle run db_residential_copilot_app -p vm   # Deploy/restart the ap
 ### SDP Pipeline (SQL)
 
 - Pipeline SQL uses fully qualified table names (multi-schema pattern).
-- Bronze tables live in `startups_catalog.bronze`.
-- Silver tables live in `startups_catalog.silver`.
-- Gold tables live in `startups_catalog.gold`.
-- Schemas: `raw` (UC Volume), `bronze`, `silver`, `gold`.
+- Bronze tables live in `startups_catalog.dbx_res_bronze`.
+- Silver tables live in `startups_catalog.dbx_res_silver`.
+- Gold tables live in `startups_catalog.dbx_res_gold`.
+- Schemas: `dbx_res_raw` (UC Volume), `dbx_res_bronze`, `dbx_res_silver`, `dbx_res_gold`.
 
 ### Backend (FastAPI)
 
