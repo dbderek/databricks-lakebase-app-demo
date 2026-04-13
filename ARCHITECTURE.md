@@ -25,7 +25,6 @@
 |  +--------------------------------------------------------------+   |               |
 |  |  Jobs                                                        |   |               |
 |  |   - lakebase_sync (notebook 03)  <---------------------------+   |               |
-|  |   - deploy_agent  (notebook 04)                              |   |               |
 |  +--------------------------------------------------------------+   |               |
 |                                                                     |               |
 |  +------------------------------------------+    +------------------------------+   |
@@ -40,6 +39,11 @@
 |  |                                          |    |  |  POST /api/deals       |  |   |
 |  +------------------------------------------+    |  |  POST /api/chat (SSE)  |  |   |
 |                                                  |  |                        |  |   |
+|                                                  |  |  In-Process Agent:     |  |   |
+|                                                  |  |   LangGraph ReAct      |  |   |
+|                                                  |  |   + ChatDatabricks  -----------> Foundation Model APIs
+|                                                  |  |   + portfolio_query    |  |   |  (Claude, GPT-5, Gemini)
+|                                                  |  |   + deal_forecast      |  |   |
 |                                                  |  +---+--------------------+  |   |
 |                                                  |      |          ^            |   |
 |                                                  |      | serves   | API calls  |   |
@@ -47,36 +51,14 @@
 |                                                  |  +---+--------------------+  |   |
 |                                                  |  |  React Frontend        |  |   |
 |                                                  |  |                        |  |   |
-|                                                  |  |  Portfolio Overview    |  |   |
-|                                                  |  |  Deal Underwriting    |  |   |
-|                                                  |  |  Investment Copilot   |  |   |
-|                                                  |  |  (Chat Panel)         |  |   |
+|                                                  |  |  Landing Page          |  |   |
+|                                                  |  |  Portfolio Dashboard   |  |   |
+|                                                  |  |  Deal Underwriting     |  |   |
+|                                                  |  |  Investment Copilot    |  |   |
 |                                                  |  +------------------------+  |   |
 |                                                  +------------------------------+   |
 |                                                                                     |
 +=====================================================================================+
-                                                       |
-                                                       | /api/chat calls
-                                                       v
-                                          +---------------------------+
-                                          |  Model Serving Endpoint   |
-                                          |  "investment_copilot"     |
-                                          |                           |
-                                          |  Tools:                   |
-                                          |   - Portfolio query       |
-                                          |     (SQL against          |
-                                          |      Lakehouse/Lakebase)  |
-                                          |   - Forecast tool         |
-                                          |     (5-year cash flow)    |
-                                          +---------------------------+
-                                                       |
-                                                       | reads governed data
-                                                       v
-                                          +---------------------------+
-                                          |  Unity Catalog            |
-                                          |  startups_catalog      |
-                                          |  (gold tables / Lakebase) |
-                                          +---------------------------+
 
 
 Data Flow (simplified):
@@ -180,20 +162,21 @@ The `lakebase_sync` job (`resources/sync_job.yml`) runs notebook `03_sync_gold_t
   - Deal Underwriting -- scenario form with IRR/DSCR output
   - Investment Copilot -- chat panel with SSE streaming
 
-### 5. Model Serving Endpoint (Investment Copilot Agent)
+### 5. Investment Copilot Agent (In-Process)
 
-- **Endpoint name:** `investment_copilot`
-- **Deployed by:** `deploy_agent` job (`resources/deploy_agent_job.yml`) running notebook `04_register_agent.ipynb`
-- **Agent code:** `src/agent/`
+- **Location:** `src/app/src/db_residential_copilot/backend/agent.py`
+- **Framework:** LangGraph ReAct agent running in-process within the FastAPI backend
+- **LLM:** ChatDatabricks (foundation model endpoints) -- user-selectable from Claude, GPT-5, and Gemini models
+- **Database access:** Queries Lakebase directly via the shared SQLAlchemy engine
 
 #### Agent Tools
 
-- **Portfolio query tool** -- Executes SQL against Lakehouse or Lakebase tables to answer exposure, performance, and allocation questions
-- **Forecast tool** -- Runs 5-year cash-flow projections with configurable assumptions (LTV, rent growth, expense ratio, exit cap rate)
+- **portfolio_query** -- Executes read-only SQL against Lakebase (gold schema tables: `gold.portfolio_metrics`, `gold.portfolio_time_series`)
+- **deal_forecast** -- Runs 5-year cash-flow projections with configurable assumptions (LTV, rent growth, expense ratio, exit cap rate)
 
 #### Integration
 
-The FastAPI `/api/chat` endpoint forwards user messages to the Model Serving endpoint and streams back responses as SSE events. The agent has access to the same governed data in Unity Catalog, completing the loop from raw data through analytics to AI-powered insights.
+The FastAPI `/api/chat` endpoint creates a LangGraph agent in-process, streams responses back to the frontend as SSE events. The agent queries Lakebase directly (same database connection as the app), avoiding the need for a separate serving endpoint. Agents are cached per-model so switching LLMs is instantaneous after first use.
 
 ---
 
@@ -203,7 +186,7 @@ The FastAPI `/api/chat` endpoint forwards user messages to the Model Serving end
 2. **Transform:** The SDP SQL pipeline processes data through bronze (raw ingestion), silver (cleaned/typed), and gold (aggregated metrics) layers.
 3. **Sync:** The Lakebase sync job copies gold tables into the Lakebase PostgreSQL database for low-latency app access.
 4. **Serve:** The apx app reads from Lakebase via SQLModel and writes user-generated scenarios back.
-5. **AI:** The investment copilot agent queries governed data and runs forecasts, accessible through the app's chat interface.
+5. **AI:** The in-process investment copilot agent queries Lakebase directly and runs forecasts via foundation model endpoints.
 6. **Present:** The React frontend displays portfolio analytics, deal underwriting tools, and the copilot chat to the end user.
 
 ---
@@ -216,7 +199,6 @@ All infrastructure is managed by a single root bundle:
 
 - **Data:** SDP SQL Pipeline (`db_residential_sdp`)
 - **Sync:** Lakebase sync job (`lakebase_sync`)
-- **Agent:** Agent deployment job (`deploy_agent`)
 - **Database:** Lakebase Autoscale instance (`db-residential-copilot`) -- defined in `resources/app.yml`
 - **App:** Databricks App (`db-residential-copilot`) -- defined in `resources/app.yml`, built via `apx build` artifact
 - **Variables:** catalog name, schema names, warehouse ID
