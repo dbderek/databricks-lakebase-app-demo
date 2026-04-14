@@ -38,6 +38,7 @@ class PortfolioMetric(SQLModel, table=True):
     purchase_price: Decimal = Field(max_digits=14, decimal_places=2)
     current_appraised_value: Decimal = Field(max_digits=14, decimal_places=2)
     market_id: str
+    image_url: Optional[str] = None
     avg_monthly_rent: Optional[Decimal] = Field(default=None, max_digits=10, decimal_places=2)
     avg_rent_collected: Optional[Decimal] = Field(default=None, max_digits=10, decimal_places=2)
     occupancy_rate_pct: Optional[Decimal] = Field(default=None, max_digits=5, decimal_places=1)
@@ -65,6 +66,7 @@ class PortfolioMetricOut(BaseModel):
     purchase_price: float
     current_appraised_value: float
     market_id: str
+    image_url: Optional[str] = None
     avg_monthly_rent: Optional[float] = None
     avg_rent_collected: Optional[float] = None
     occupancy_rate_pct: Optional[float] = None

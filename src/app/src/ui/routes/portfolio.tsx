@@ -379,49 +379,16 @@ function PortfolioContent() {
         </ChartCard>
       </div>
 
-      {/* Property Table */}
-      <div
-        className="glass rounded-xl overflow-hidden"
-        style={{ animation: "fade-in-up 0.5s ease-out 300ms both" }}
-      >
-        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+      {/* Property Cards Grid */}
+      <div style={{ animation: "fade-in-up 0.5s ease-out 300ms both" }}>
+        <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-sm">All Properties</h3>
           <span className="text-xs text-[var(--muted-foreground)]">{overview.properties.length} properties</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-[var(--muted-foreground)]">
-                <th className="text-left px-6 py-3 font-medium text-xs uppercase tracking-wider">Property</th>
-                <th className="text-left px-4 py-3 font-medium text-xs uppercase tracking-wider">Location</th>
-                <th className="text-left px-4 py-3 font-medium text-xs uppercase tracking-wider">Type</th>
-                <th className="text-right px-4 py-3 font-medium text-xs uppercase tracking-wider">Units</th>
-                <th className="text-right px-4 py-3 font-medium text-xs uppercase tracking-wider">Occupancy</th>
-                <th className="text-right px-4 py-3 font-medium text-xs uppercase tracking-wider">Cash Yield</th>
-                <th className="text-right px-6 py-3 font-medium text-xs uppercase tracking-wider">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overview.properties.map((p: PortfolioMetricOut) => (
-                <tr
-                  key={p.property_id}
-                  className="border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--muted)] transition-colors"
-                >
-                  <td className="px-6 py-3.5 font-medium text-[var(--foreground)]">{p.property_name}</td>
-                  <td className="px-4 py-3.5 text-[var(--muted-foreground)]">{p.city}, {p.state}</td>
-                  <td className="px-4 py-3.5"><TypeBadge type={p.property_type} /></td>
-                  <td className="px-4 py-3.5 text-right font-mono text-xs">{p.units}</td>
-                  <td className="px-4 py-3.5 text-right">
-                    {p.occupancy_rate_pct != null ? <OccupancyBadge value={p.occupancy_rate_pct} /> : <span className="text-[var(--muted-foreground)]">--</span>}
-                  </td>
-                  <td className="px-4 py-3.5 text-right font-mono text-xs">
-                    {p.cash_yield_pct != null ? `${p.cash_yield_pct.toFixed(2)}%` : "--"}
-                  </td>
-                  <td className="px-6 py-3.5 text-right font-mono text-xs">${(p.current_appraised_value / 1_000_000).toFixed(1)}M</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {overview.properties.map((p: PortfolioMetricOut, idx: number) => (
+            <PropertyCard key={p.property_id} property={p} index={idx} />
+          ))}
         </div>
       </div>
     </div>
@@ -489,6 +456,99 @@ function DeltaBadge({ value }: { value: number }) {
       {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
       {Math.abs(value).toFixed(1)}
     </span>
+  );
+}
+
+function PropertyCard({ property: p, index }: { property: PortfolioMetricOut; index: number }) {
+  const isLowOcc = (p.occupancy_rate_pct ?? 100) < 85;
+  const fallbackBg = `hsl(${(index * 37) % 360}, 30%, 18%)`;
+
+  return (
+    <div
+      className="glass rounded-xl overflow-hidden group hover:ring-1 hover:ring-[var(--db-orange)]/40 transition-all duration-300"
+      style={{ animationDelay: `${300 + index * 30}ms` }}
+    >
+      {/* Image */}
+      <div className="relative h-44 overflow-hidden" style={{ background: fallbackBg }}>
+        {p.image_url ? (
+          <img
+            src={p.image_url}
+            alt={p.property_name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Building2 size={36} className="text-[var(--muted-foreground)] opacity-30" />
+          </div>
+        )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {/* Price badge */}
+        <div className="absolute top-3 right-3">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-black/60 text-white backdrop-blur-sm">
+            ${(p.current_appraised_value / 1_000_000).toFixed(1)}M
+          </span>
+        </div>
+        {/* Low occupancy warning */}
+        {isLowOcc && (
+          <div className="absolute top-3 left-3">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-[var(--destructive)]/90 text-white backdrop-blur-sm">
+              <AlertTriangle size={11} />
+              Low Occ
+            </span>
+          </div>
+        )}
+        {/* Name overlay at bottom of image */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
+          <h4 className="font-semibold text-white text-sm leading-tight drop-shadow-md">{p.property_name}</h4>
+          <p className="text-white/70 text-xs mt-0.5">{p.address}</p>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="px-4 py-3 space-y-2.5">
+        {/* Location + Type row */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[var(--muted-foreground)]">{p.city}, {p.state}</span>
+          <TypeBadge type={p.property_type} />
+        </div>
+
+        {/* Metrics grid */}
+        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[var(--border)]">
+          <div>
+            <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider">Units</p>
+            <p className="text-sm font-semibold font-mono">{p.units}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider">Occupancy</p>
+            <p className="text-sm font-semibold">
+              {p.occupancy_rate_pct != null ? (
+                <span style={{ color: isLowOcc ? "var(--destructive)" : "var(--db-green)" }}>
+                  {p.occupancy_rate_pct.toFixed(1)}%
+                </span>
+              ) : "--"}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-[var(--muted-foreground)] uppercase tracking-wider">Yield</p>
+            <p className="text-sm font-semibold font-mono">
+              {p.cash_yield_pct != null ? `${p.cash_yield_pct.toFixed(1)}%` : "--"}
+            </p>
+          </div>
+        </div>
+
+        {/* Rent + Gain footer */}
+        <div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--border)]">
+          <span className="text-[var(--muted-foreground)]">
+            Rent: <span className="text-[var(--foreground)] font-medium">${p.avg_monthly_rent != null ? Math.round(p.avg_monthly_rent).toLocaleString() : "--"}/mo</span>
+          </span>
+          <span className={`font-medium ${(p.unrealized_gain ?? 0) >= 0 ? "text-[var(--db-green)]" : "text-[var(--destructive)]"}`}>
+            {p.unrealized_gain != null ? `${(p.unrealized_gain ?? 0) >= 0 ? "+" : ""}$${(Math.abs(p.unrealized_gain ?? 0) / 1_000_000).toFixed(1)}M` : "--"}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 

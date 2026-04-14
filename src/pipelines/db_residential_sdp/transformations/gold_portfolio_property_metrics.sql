@@ -21,6 +21,7 @@ SELECT
   p.purchase_price,
   p.current_appraised_value,
   p.market_id,
+  p.image_url,
   -- Rent metrics
   ROUND(r.avg_monthly_rent, 2) AS avg_monthly_rent,
   ROUND(r.avg_rent_collected, 2) AS avg_rent_collected,

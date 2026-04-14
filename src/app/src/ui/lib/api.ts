@@ -82,6 +82,7 @@ export interface PortfolioMetricOut {
     city: string;
     collection_rate_pct?: number | null;
     current_appraised_value: number;
+    image_url?: string | null;
     latest_rent_date?: string | null;
     market_id: string;
     occupancy_rate_pct?: number | null;

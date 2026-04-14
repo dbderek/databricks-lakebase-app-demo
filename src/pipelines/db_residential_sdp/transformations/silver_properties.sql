@@ -25,5 +25,6 @@ SELECT
   CAST(purchase_price AS DECIMAL(14, 2)) AS purchase_price,
   CAST(current_appraised_value AS DECIMAL(14, 2)) AS current_appraised_value,
   market_id,
+  image_url,
   _ingested_at
 FROM STREAM startups_catalog.dbx_res_bronze.bronze_properties;

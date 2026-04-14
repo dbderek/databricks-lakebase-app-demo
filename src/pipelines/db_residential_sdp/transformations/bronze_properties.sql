@@ -13,5 +13,5 @@ SELECT
 FROM STREAM read_files(
   '/Volumes/startups_catalog/dbx_res_raw/data/properties/',
   format => 'json',
-  schemaHints => 'property_id STRING, property_name STRING, address STRING, city STRING, state STRING, zip_code STRING, property_type STRING, asset_class STRING, units BIGINT, square_footage BIGINT, year_built BIGINT, acquisition_date STRING, purchase_price DOUBLE, current_appraised_value DOUBLE, market_id STRING'
+  schemaHints => 'property_id STRING, property_name STRING, address STRING, city STRING, state STRING, zip_code STRING, property_type STRING, asset_class STRING, units BIGINT, square_footage BIGINT, year_built BIGINT, acquisition_date STRING, purchase_price DOUBLE, current_appraised_value DOUBLE, market_id STRING, image_url STRING'
 );
